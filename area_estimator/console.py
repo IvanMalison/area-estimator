@@ -1,24 +1,13 @@
 import argparse
 import coloredlogs
 import copy
-import cv2
-import functools
 import json
-import labelbox as lb
-import numpy as np
-import os
 import pprint
-import shutil
-import tempfile
 
-from collections.abc import Iterable
 from dependency_injector.wiring import Provide, inject
-from PIL import Image
 
 from . import config
 from . import labelbox
-from . import labels
-from . import line
 from . import logger
 from . import util
 from .containers import AEDeps

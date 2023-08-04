@@ -1,10 +1,14 @@
 import cv2
 import math
+import logging
 import numpy as np
 
-from typing import Optional, Any, Callable, Dict, Sequence
+from typing import Sequence
 
 from . import labelbox
+
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_area(mask, h_fov, v_fov, height):
@@ -52,10 +56,9 @@ def calculate_fov(diagonal_fov_degrees, aspect_ratio):
     return horizontal_fov_degrees, vertical_fov_degrees
 
 
-
 class AreaCalculator:
 
-    def __init__(self, diagonal_fov_degrees: int, aspect_ratio: float = 4.0/3.0):
+    def __init__(self, diagonal_fov_degrees: int, aspect_ratio: float = 4.0 / 3.0):
         self.diagonal_fov_degrees = diagonal_fov_degrees
         self.horizontal_fov, self.vertical_fov = calculate_fov(diagonal_fov_degrees, aspect_ratio)
         self.aspect_ratio = aspect_ratio
@@ -79,6 +82,9 @@ class AreaCalculator:
 
 class ProjectAreaEstimator:
 
+    height_feature_id = "clkww5y9g0002356lz6558syg"
+    default_height = 300
+
     def __init__(
             self, calculator: AreaCalculator,
             projects: Sequence[labelbox.CachedProject],
@@ -100,6 +106,28 @@ class ProjectAreaEstimator:
             project.get_all_project_annotations(sample_id)
         )
         images = [label.image for label in objs["Sargassum"]]
-        # TODO figure out how to get this
-        height = 300
+
+        try:
+            height = self.get_height(project, sample_id)
+        except Exception as e:
+            logger.warn(
+                f"Encountered exception {e} getting height for {sample_id}, "
+                f"using default of {self.default_height}",
+            )
+            height = self.default_height
+        else:
+            if height is None:
+                logger.warn(
+                    f"No height found for {sample_id}, using default of {self.default_height}",
+                )
+                height = self.default_height
+
         return self.calculator.calculate_area(images, height)
+
+    def get_height(self, project, sample_id):
+        project_info = project.lookup_by_id(sample_id)['projects'][project._project_id]
+        classifications = project_info['labels'][0]['annotations']['classifications']
+
+        for c in classifications:
+            if c['feature_id'] == self.height_feature_id:
+                return int(c['text_answer']['content'])
