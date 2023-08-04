@@ -1,4 +1,4 @@
-mport logging
+import logging
 import os
 import xdg_base_dirs
 import yaml
