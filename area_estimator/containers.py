@@ -9,6 +9,7 @@ from . import area
 from . import config as defaults
 from . import labelbox as rb_labelbox
 from . import util
+from . import spreadsheet
 
 
 class AEDeps(containers.DeclarativeContainer):
@@ -21,6 +22,11 @@ class AEDeps(containers.DeclarativeContainer):
             "fix_cv2": True,
             "field_of_view": 84,
             "default_height": 300,
+        },
+        "google": {
+            "api_key_path": os.path.join(
+                defaults.default_config_directory(), "google", "credentials.json",
+            ),
         },
         "labelbox": {
             "data_to_request": {
@@ -93,4 +99,11 @@ class AEDeps(containers.DeclarativeContainer):
         calculator,
         labelbox_projects,
         label_extractor_factory,
+    )
+
+    spreadsheet_updater = providers.Singleton(
+        spreadsheet.GoogleSheetUpdater,
+        project_area_estimator,
+        config.google.api_key_path,
+        config.google.spreadsheet_url,
     )

@@ -101,8 +101,15 @@ def build_parser():
     subparsers = parser.add_subparsers(title="subcommands")
     _add_labelbox_parsers(subparsers, parents=parents)
 
-    area_parser = subparsers.add_parser("estimate_areas", help="Estimate the areas of all samples")
+    area_parser = subparsers.add_parser(
+        "estimate_areas", help="Estimate the areas of all samples",
+    )
     area_parser.set_defaults(func=estimate_areas)
+
+    spreadsheet_parser = subparsers.add_parser(
+        "update_spreadsheet", help="Update a google spreadsheet with new areas",
+    )
+    spreadsheet_parser.set_defaults(func=update_spreadsheet)
 
     return parser
 
@@ -173,3 +180,8 @@ def list_sample_ids(args, projects=Provide[AEDeps.labelbox_projects]):
 @inject
 def estimate_areas(args, project_area_estimator=Provide[AEDeps.project_area_estimator]):
     print(json.dumps(project_area_estimator.get_all()))
+
+
+@inject
+def update_spreadsheet(args, spreadsheet_updater=Provide[AEDeps.spreadsheet_updater]):
+    spreadsheet_updater.update_spreadsheet()
