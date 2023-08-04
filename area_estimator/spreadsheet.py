@@ -40,7 +40,7 @@ class GoogleSheetUpdater:
         id_row_map = {row[0]: i + 1 for i, row in enumerate(existing_data)}
 
         # Get the values in the first row (headers)
-        headers = worksheet.row_values(1)
+        headers = worksheet.row_values(1)[:2]
 
         # Define the headers
         desired_headers = ['Sample ID', 'Area']
