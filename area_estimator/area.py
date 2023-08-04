@@ -82,7 +82,7 @@ class AreaCalculator:
 
 class ProjectAreaEstimator:
 
-    height_feature_id = "clkww5y9g0002356lz6558syg"
+    height_feature_id = "clkww3kwq01ro07z33qxv0v74"
     default_height = 300
 
     def __init__(
@@ -129,5 +129,5 @@ class ProjectAreaEstimator:
         classifications = project_info['labels'][0]['annotations']['classifications']
 
         for c in classifications:
-            if c['feature_id'] == self.height_feature_id:
+            if c["feature_schema_id"] == self.height_feature_id:
                 return int(c['text_answer']['content'])
