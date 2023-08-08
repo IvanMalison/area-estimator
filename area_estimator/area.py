@@ -11,28 +11,34 @@ from . import labelbox
 logger = logging.getLogger(__name__)
 
 
-def calculate_area(mask, h_fov, v_fov, height):
-    # Count the number of white pixels in the mask
-    mask_pixels = cv2.countNonZero(mask)
+def calculate_area(mask, diagonal_fov_degrees, distance_to_subject):
+    image_width_pixels = float(mask.shape[1])
+    # Compute the real-world diagonal length of the scene
+    diagonal_fov_radians = np.radians(diagonal_fov_degrees)
+    scene_diagonal = 2.0 * float(distance_to_subject) * np.tan(diagonal_fov_radians / 2.0)
 
-    # Image dimensions
-    image_height, image_width = mask.shape
+    # Compute the real-world width of the scene (assuming square image)
+    scene_width = scene_diagonal / np.sqrt(2.0)
 
-    # Convert the FOV from degrees to radians
-    h_fov_rad = np.radians(h_fov)
-    v_fov_rad = np.radians(v_fov)
+    # Compute the real-world distance represented by a pixel
+    d = scene_width / image_width_pixels
+    A_pixel = d * d
 
-    # Calculate the width and height of the area covered by the image
-    area_width = 2 * height * np.tan(h_fov_rad / 2)
-    area_height = 2 * height * np.tan(v_fov_rad / 2)
+    # Compute the center of the mask
+    center_y, center_x = float(mask.shape[0]) / 2.0, float(mask.shape[1]) / 2.0
 
-    # Calculate the area of one pixel
-    pixel_area = (area_width * area_height) / (image_width * image_height)
+    total_area = 0.0
 
-    # Calculate the total area of the mask
-    mask_area = mask_pixels * pixel_area
+    # Iterate over the mask
+    for i in range(mask.shape[0]):
+        for j in range(mask.shape[1]):
+            if mask[i, j] != 0.0:  # If the pixel is part of the region of interest
+                x = np.sqrt((float(i) - center_y) ** 2 + (float(j) - center_x) ** 2) * d
+                R = np.sqrt(distance_to_subject ** 2 + x ** 2)
+                A_x = A_pixel * (R / distance_to_subject) ** 2
+                total_area += A_x
 
-    return mask_area
+    return total_area
 
 
 def get_aspect_ratio(image):
@@ -68,8 +74,7 @@ class AreaCalculator:
 
     def calculate_area_for_mask(self, mask, height):
         image = self._get_image(mask)
-        horizontal, vertical = self.get_fovs(get_aspect_ratio(image))
-        return calculate_area(image, horizontal, vertical, height)
+        return calculate_area(image, self.diagonal_fov_degrees, height)
 
     def _get_image(self, image):
         if isinstance(image, np.ndarray):
