@@ -13,30 +13,38 @@ logger = logging.getLogger(__name__)
 
 def calculate_area(mask, diagonal_fov_degrees, distance_to_subject):
     image_width_pixels = float(mask.shape[1])
+    mask = (mask > 0).astype(np.float32)
+
     # Compute the real-world diagonal length of the scene
     diagonal_fov_radians = np.radians(diagonal_fov_degrees)
-    scene_diagonal = 2.0 * float(distance_to_subject) * np.tan(diagonal_fov_radians / 2.0)
+    scene_diagonal = 2 * distance_to_subject * np.tan(diagonal_fov_radians / 2)
 
     # Compute the real-world width of the scene (assuming square image)
-    scene_width = scene_diagonal / np.sqrt(2.0)
+    scene_width = scene_diagonal / np.sqrt(2)
 
     # Compute the real-world distance represented by a pixel
     d = scene_width / image_width_pixels
     A_pixel = d * d
 
     # Compute the center of the mask
-    center_y, center_x = float(mask.shape[0]) / 2.0, float(mask.shape[1]) / 2.0
+    center_y, center_x = mask.shape[0] // 2, mask.shape[1] // 2
 
-    total_area = 0.0
+    # Create a grid of y and x coordinates
+    y = np.arange(mask.shape[0]) - center_y
+    x = np.arange(mask.shape[1]) - center_x
+    y, x = np.meshgrid(y, x, indexing='ij')
 
-    # Iterate over the mask
-    for i in range(mask.shape[0]):
-        for j in range(mask.shape[1]):
-            if mask[i, j] != 0.0:  # If the pixel is part of the region of interest
-                x = np.sqrt((float(i) - center_y) ** 2 + (float(j) - center_x) ** 2) * d
-                R = np.sqrt(distance_to_subject ** 2 + x ** 2)
-                A_x = A_pixel * (R / distance_to_subject) ** 2
-                total_area += A_x
+    # Calculate distances from center for each pixel
+    distances = np.sqrt(y**2 + x**2) * d
+
+    # Calculate R for each pixel
+    R = np.sqrt(distance_to_subject**2 + distances**2)
+
+    # Calculate area multiplier for each pixel
+    area_multipliers = (R / distance_to_subject) ** 2
+
+    # Total area
+    total_area = np.sum(mask * A_pixel * area_multipliers)
 
     return total_area
 
